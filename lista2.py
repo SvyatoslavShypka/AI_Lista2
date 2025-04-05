@@ -46,15 +46,17 @@ class GameState:
                     for dr, dc in DIRECTIONS:
                         nr, nc = r + dr, c + dc
                         if 0 <= nr < len(self.board) and 0 <= nc < len(self.board[0]):
+                            # Jeśli pole zawiera pionka przeciwnika, to jest to dozwolony ruch
                             if self.board[nr][nc] == self.get_opponent():
                                 moves.append(((r, c), (nr, nc)))
         return moves
 
     def apply_move(self, move):
         (r1, c1), (r2, c2) = move
-        self.board[r2][c2] = self.current_player
-        self.board[r1][c1] = EMPTY
-        return GameState(self.board, self.get_opponent())
+        new_board = copy.deepcopy(self.board)  # <- bardzo ważne!
+        new_board[r2][c2] = self.current_player  # Zastępujemy przeciwnika
+        new_board[r1][c1] = EMPTY  # Puste pole po sobie
+        return GameState(new_board, self.get_opponent())  # Zwracamy nowy stan gry
 
     def is_terminal(self):
         return len(self.get_possible_moves()) == 0
