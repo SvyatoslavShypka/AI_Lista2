@@ -15,6 +15,7 @@ def wait_for_space():
         if char == b' ':
             break
 
+
 # Definicje graczy
 PLAYER_1 = 'B'
 PLAYER_2 = 'W'
