@@ -221,7 +221,6 @@ def wait_for_space():
 # python clobber.py < board.txt
 if __name__ == "__main__":
     import argparse
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-H', '--heurystyka', type=int, help='Wybór heurystyki')
     parser.add_argument('-d', type=int, help='Maksymalna głębokość drzewa')

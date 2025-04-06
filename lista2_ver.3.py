@@ -9,21 +9,15 @@ PLAYER_2 = 'W'
 EMPTY = '_'
 
 # Kierunki ruchu (N, S, E, W)
-DIRECTIONS = [(-1, 0), (1, 0), (0, 1), (0, -1)]  # Północ, Południe, Wschód, Zachód
+KIERUNKI = [(-1, 0), (1, 0), (0, 1), (0, -1)]  # Północ, Południe, Wschód, Zachód
 
-# Wymiary planszy
-BOARD_SIZE_X = 5  # 5 wierszy
-BOARD_SIZE_Y = 6  # 6 kolumn
-CELL_SIZE = 100
-SCREEN_WIDTH = BOARD_SIZE_Y * CELL_SIZE
-SCREEN_HEIGHT = BOARD_SIZE_X * CELL_SIZE
 
 # Kolory
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-GRAY = (169, 169, 169)
+YELLOW_GROUND = (225, 238, 18)
+BROWN_GROUND = (87, 47, 38)
+BORDER = (169, 169, 169)
+CZARNY_PIONEK = (0, 0, 0)
+BIALY_PIONEK = (255, 255, 255)
 
 # Klasa reprezentująca stan gry
 class GameState:
@@ -42,7 +36,7 @@ class GameState:
         for r in range(len(self.board)):
             for c in range(len(self.board[0])):
                 if self.board[r][c] == self.current_player:
-                    for dr, dc in DIRECTIONS:
+                    for dr, dc in KIERUNKI:
                         nr, nc = r + dr, c + dc
                         if 0 <= nr < len(self.board) and 0 <= nc < len(self.board[0]):
                             # Jeśli pole zawiera pionka przeciwnika, to jest to dozwolony ruch
@@ -121,15 +115,15 @@ def draw_board(game_state, screen):
     for row in range(BOARD_SIZE_X):
         for col in range(BOARD_SIZE_Y):
             rect = pygame.Rect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            color = GRAY if (row + col) % 2 == 0 else WHITE
+            color = BROWN_GROUND if (row + col) % 2 == 0 else YELLOW_GROUND
             pygame.draw.rect(screen, color, rect)
-            pygame.draw.rect(screen, BLACK, rect, 2)
+            pygame.draw.rect(screen, BORDER, rect, 2)
 
             piece = game_state.board[row][col]
             if piece == PLAYER_1:
-                pygame.draw.circle(screen, BLUE, rect.center, CELL_SIZE // 3)
+                pygame.draw.circle(screen, BIALY_PIONEK, rect.center, CELL_SIZE // 3)
             elif piece == PLAYER_2:
-                pygame.draw.circle(screen, RED, rect.center, CELL_SIZE // 3)
+                pygame.draw.circle(screen, CZARNY_PIONEK, rect.center, CELL_SIZE // 3)
 
 
 # Funkcja animacji ruchu
@@ -140,16 +134,16 @@ def animate_move(game_state, start_pos, end_pos, screen, steps=10):
     dy = (r2 - r1) * CELL_SIZE / steps
 
     for step in range(steps):
-        screen.fill(WHITE)
+        screen.fill(YELLOW_GROUND)
         draw_board(game_state, screen)
 
         new_x = c1 * CELL_SIZE + dx * step
         new_y = r1 * CELL_SIZE + dy * step
 
         if game_state.board[r1][c1] == PLAYER_1:
-            pygame.draw.circle(screen, BLUE, (int(new_x + CELL_SIZE // 2), int(new_y + CELL_SIZE // 2)), CELL_SIZE // 3)
+            pygame.draw.circle(screen, BIALY_PIONEK, (int(new_x + CELL_SIZE // 2), int(new_y + CELL_SIZE // 2)), CELL_SIZE // 3)
         elif game_state.board[r1][c1] == PLAYER_2:
-            pygame.draw.circle(screen, RED, (int(new_x + CELL_SIZE // 2), int(new_y + CELL_SIZE // 2)), CELL_SIZE // 3)
+            pygame.draw.circle(screen, CZARNY_PIONEK, (int(new_x + CELL_SIZE // 2), int(new_y + CELL_SIZE // 2)), CELL_SIZE // 3)
 
         pygame.display.flip()
         pygame.time.delay(50)
@@ -166,7 +160,7 @@ def wait_for_space():
 
 
 # Główna funkcja rozgrywki
-def play_game(board, heuristic, depth, interactive=False):
+def play_game(board, heuristic, depth, interactive):
     state = GameState(board, PLAYER_1)
     rounds = 0
     total_nodes = 0
@@ -217,7 +211,47 @@ def read_board(file_path):
 
 # Uruchomienie gry
 if __name__ == "__main__":
-    board = read_board('plansza.txt')  # Wczytanie planszy z pliku
-    play_game(board, 2, 4, interactive=True)  # Uruchomienie gry w trybie interaktywnym
-    pygame.quit()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-H', '--heurystyka', type=int, help='Wybór heurystyki')
+    parser.add_argument('-d', '--depth', type=int, help='Maksymalna głębokość drzewa')
+    parser.add_argument('--board', type=str, help='Ścieżka do pliku z planszą')
+    parser.add_argument('--interactive', action='store_true', help='Tryb krok po kroku (SPACJA)')
+    args = parser.parse_args()
+    board_file = 'plansza.txt'
+    interactive = False
+    heurystyka = 2
+    depth = 4
+    if args:
+        if args.board:
+            board_file = args.board
+        if args.interactive:
+            interactive = args.interactive
+        if args.heurystyka:
+            heurystyka = args.heurystyka
+        if args.depth:
+            depth = args.depth
+
+    with open(board_file, 'r') as f:
+        board = [line.strip().split() for line in f.readlines()]
+    n = len(board)
+    m = len(board[0])
+    if n * m % 2 != 0:
+        print(f"Plansza {n} x {m} nie jest prawidlowa dla gry Clobber", file=sys.stderr)
+        sys.exit(1)
+
+    # Wymiary planszy
+    BOARD_SIZE_X = n  # 5 wierszy
+    BOARD_SIZE_Y = m  # 6 kolumn
+    CELL_SIZE = 80
+    SCREEN_WIDTH = BOARD_SIZE_Y * CELL_SIZE
+    SCREEN_HEIGHT = BOARD_SIZE_X * CELL_SIZE
+
+    # board = read_board('plansza.txt')  # Wczytanie planszy z pliku
+    play_game(board, heurystyka, depth, interactive)
+
+    # TEST
+    # python lista2_ver.3.py --board plansza.txt -H 2 -d 4 --interactive
+    if interactive:
+        pygame.quit()
     sys.exit()
